@@ -16,4 +16,8 @@
 #define CLINE_SIZE 64
 #define REP_POLICY 1
 
+int parser(FILE *fp);
+int breakup(char *line);
+int switchInstruction(int instruct, int address);
+
 int complete();

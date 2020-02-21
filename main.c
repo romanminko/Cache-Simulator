@@ -18,9 +18,9 @@ int main(int argc, char *argv[])
 	exit(EXIT_FAILURE);
 
 	// Parse file and do all operations
-	//parser(fp);
+	parser(fp);
 	fclose(fp);
 	complete();
-	
+
 	return 0;
 }
