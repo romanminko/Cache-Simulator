@@ -8,7 +8,7 @@ Purpose:		Final project for ECE 485/585
 #include "cache.h"
 
 int main(int argc, char *argv[])
-{ 
+{
 	printf("starting\n\n");
 	FILE *fp;
 
@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
 	exit(EXIT_FAILURE);
 
 	// Parse file and do all operations
+//	cacheEntryPtr_t* cache = createCache();
 	parser(fp);
 	fclose(fp);
 	complete();
