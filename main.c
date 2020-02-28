@@ -18,8 +18,8 @@ int main(int argc, char *argv[])
 	exit(EXIT_FAILURE);
 
 	// Parse file and do all operations
-	cacheEntryPtr_t* cache = createCache();
-	parser(fp, cache);
+//	cacheEntryPtr_t* cache = createCache();
+	parser(fp);
 	fclose(fp);
 	complete();
 
