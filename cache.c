@@ -1,5 +1,6 @@
 #include "cache.h"
 
+int cache[NUM_SETS][NUM_WAYS];
 int readCount = 0;
 int writeCount = 0;
 int invalidateCount = 0;
@@ -26,14 +27,35 @@ int breakup(char *line)
 {
 	char *token;
 	int instruct[2];
+	int address;
+	int byteSelectBits;
+	int indexBits;
+	int tagBits;
+	int index;
+	int tag;
 
 	token = strtok(line, " ");
 	instruct[0] = (int)strtol(token, NULL, 16);
 
 	token = strtok(NULL, " ");
 	instruct[1] = (int)strtol(token, NULL, 16);
+//	switchInstruction(instruct[0], instruct[1]);
+	address = instruct[1];
+	byteSelectBits = log2(LINE_SIZE);
+	indexBits = log2(NUM_SETS/NUM_WAYS);
+	tagBits = 32 - indexBits - byteSelectBits;
+	printf("number of byte select bits: %d\n", byteSelectBits);
+	printf("number of index bits: %d\n", indexBits);
+	printf("number of tag bits: %d\n", tagBits);
 
-	switchInstruction(instruct[0], instruct[1]);
+	index = ((instruct[1] >> byteSelectBits) & (NUM_SETS/NUM_WAYS - 1));
+	int tagMask = 1;
+	for (int i = 0; i < tagBits; i++)
+		tagMask = 2*tagMask;
+	tag = ((instruct[1] >> indexBits + byteSelectBits) & (tagMask - 1));
+	printf("address: %x\n", address);
+	printf("index: %x\n", index);
+	printf("tag: %x\n", tag);
 
 	return 1;
 }
@@ -72,9 +94,9 @@ int complete()
 
 	// Print parameters
 	printf("\nCACHE PARAMETERS:");
-	printf("\nNumber of sets: %d", SETS);
-	printf("\nAssociativity: %d", SET_ASS);
-	printf("\nCache line size: %d", CLINE_SIZE);
+	printf("\nNumber of NUM_sets: %d", NUM_SETS);
+	printf("\nAssociativity: %d", NUM_WAYS);
+	printf("\nCache line size: %d", LINE_SIZE);
 
 	if (REP_POLICY == 0)
 	{

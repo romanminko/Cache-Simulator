@@ -11,9 +11,9 @@
 #include <math.h>
 
 //parameters given
-#define SETS 256
-#define SET_ASS 8
-#define CLINE_SIZE 64
+#define NUM_SETS 256
+#define NUM_WAYS 1
+#define LINE_SIZE 256
 #define REP_POLICY 1
 
 int parser(FILE *fp);

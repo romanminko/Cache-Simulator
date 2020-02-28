@@ -9,6 +9,7 @@ main.o : main.c
 	gcc main.c -c
 cache.o : cache.c
 	gcc cache.c -c
+$(OBJS) : cache.h
 clean:
 	rm $(OBJS) cache
 run : cache
