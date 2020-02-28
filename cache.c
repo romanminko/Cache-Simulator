@@ -8,22 +8,8 @@ int missCount = 0;
 int evictionCount = 0;
 int writebackCount = 0;
 
-// cacheEntryPtr_t createCache() {
-// 	cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS];
-// 	for (int i = 0; i < NUM_SETS; i++) {
-// 		for (int k = 0; k < NUM_WAYS; k++) {
-// 			cache[i][k] = (cacheEntryPtr_t) malloc(sizeof(cacheEntry_t));
-// 			if (!cache[i][k]) {
-// 				printf("malloc failed\n");
-// 			}
-// 		}
-// 	}
-// 	return cache;
-// }
-
-int parser(FILE *fp)
-{
-	cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS];
+cacheEntryPtr_t* createCache() {
+	static cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS];
 	for (int i = 0; i < NUM_SETS; i++) {
 		for (int k = 0; k < NUM_WAYS; k++) {
 			cache[i][k] = (cacheEntryPtr_t) malloc(sizeof(cacheEntry_t));
@@ -32,14 +18,18 @@ int parser(FILE *fp)
 			}
 		}
 	}
+	return *cache;
+}
 
+int parser(FILE *fp, cacheEntryPtr_t *cache)
+{
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
 
 	while ((read = getline(&line, &len, fp)) != -1)
 	{
-		if (!breakup(line, *cache))
+		if (!breakup(line, cache))
 		{
 			return -1;
 		}
