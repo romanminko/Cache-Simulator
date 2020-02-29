@@ -89,8 +89,23 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 		if (cache[newIndex][k]->valid == 1 && cache[newIndex][k]->tag == newTag) {
 				hitCount++;
 
-				if (REP_POLICY == 1)
+				// adjust LRU bit(s)
+				if (REP_POLICY == 1) {
 					cache[newIndex][k]->LRU = 1;
+					// check if all LRU bits in the set are high
+					int LRUcheck = 0;
+					for (int k = 0; k < NUM_WAYS; k++) {
+						if (cache[newIndex][k]->LRU == 1) {
+							LRUcheck++;
+						}
+					}
+					// if all LRU bits are high, reset all LRU bits in the set
+					if (LRUcheck == NUM_WAYS) {
+						for (int k = 0; k < NUM_WAYS; k++) {
+							cache[newIndex][k]->LRU = 0;
+						}
+					}
+				}
 				if (REP_POLICY == 0) {
 					for (int i = 0; i < NUM_WAYS; i++) {
 						if (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU)
@@ -115,8 +130,24 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 		if (cache[newIndex][k]->valid == 0) {
 			cache[newIndex][k]->tag = newTag;
 			cache[newIndex][k]->valid = 1;
-			if (REP_POLICY == 1)
+
+			// adjust LRU bit(s)
+			if (REP_POLICY == 1) {
 				cache[newIndex][k]->LRU = 1;
+				// check if all LRU bits in the set are high
+				int LRUcheck = 0;
+				for (int k = 0; k < NUM_WAYS; k++) {
+					if (cache[newIndex][k]->LRU == 1) {
+						LRUcheck++;
+					}
+				}
+				// if all LRU bits are high, reset all LRU bits in the set
+				if (LRUcheck == NUM_WAYS) {
+					for (int k = 0; k < NUM_WAYS; k++) {
+						cache[newIndex][k]->LRU = 0;
+					}
+				}
+			}
 			if (REP_POLICY == 0) {
 				cache[newIndex][k]->LRU = 0;
 				for (int i = 0; i < NUM_WAYS; i++) {
@@ -156,8 +187,22 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				cache[newIndex][k]->dirty = 1;
 
 				// adjust LRU bit(s)
-				if (REP_POLICY == 1)
+				if (REP_POLICY == 1) {
 					cache[newIndex][k]->LRU = 1;
+					// check if all LRU bits in the set are high
+					int LRUcheck = 0;
+					for (int k = 0; k < NUM_WAYS; k++) {
+						if (cache[newIndex][k]->LRU == 1) {
+							LRUcheck++;
+						}
+					}
+					// if all LRU bits are high, reset all LRU bits in the set
+					if (LRUcheck == NUM_WAYS) {
+						for (int k = 0; k < NUM_WAYS; k++) {
+							cache[newIndex][k]->LRU = 0;
+						}
+					}
+				}
 				if (REP_POLICY == 0) {
 					for (int i = 0; i < NUM_WAYS; i++) {
 						if (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU)
@@ -185,8 +230,22 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			cache[newIndex][k]->dirty = 1;
 
 			// adjust LRU bit(s)
-			if (REP_POLICY == 1)
+			if (REP_POLICY == 1) {
 				cache[newIndex][k]->LRU = 1;
+				// check if all LRU bits in the set are high
+				int LRUcheck = 0;
+				for (int k = 0; k < NUM_WAYS; k++) {
+					if (cache[newIndex][k]->LRU == 1) {
+						LRUcheck++;
+					}
+				}
+				// if all LRU bits are high, reset all LRU bits in the set
+				if (LRUcheck == NUM_WAYS) {
+					for (int k = 0; k < NUM_WAYS; k++) {
+						cache[newIndex][k]->LRU = 0;
+					}
+				}
+			}
 			if (REP_POLICY == 0) {
 				cache[newIndex][k]->LRU = 0;
 				for (int i = 0; i < NUM_WAYS; i++) {
@@ -240,25 +299,27 @@ int cacheInvalidate(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 }
 
 int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
-	// check if all LRU bits in the set are high
-	int LRUcheck = 0;
-	for (int k = 0; k < NUM_WAYS; k++) {
-		if (cache[newIndex][k]->LRU == 1) {
-			LRUcheck++;
-		}
-	}
-	// if all LRU bits are high, reset all LRU bits in the set
-	if (LRUcheck == NUM_WAYS) {
-		for (int k = 0; k < NUM_WAYS; k++) {
-			cache[newIndex][k]->LRU = 0;
-		}
-	}
+
 	// evict first entry whose LRU is 0
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == 0) {
 
 			cache[newIndex][k]->tag = newTag;
 			cache[newIndex][k]->LRU = 1;
+
+			// check if all LRU bits in the set are high
+			int LRUcheck = 0;
+			for (int k = 0; k < NUM_WAYS; k++) {
+				if (cache[newIndex][k]->LRU == 1) {
+					LRUcheck++;
+				}
+			}
+			// if all LRU bits are high, reset all LRU bits in the set
+			if (LRUcheck == NUM_WAYS) {
+				for (int k = 0; k < NUM_WAYS; k++) {
+					cache[newIndex][k]->LRU = 0;
+				}
+			}
 
 			evictionCount++;
 
@@ -270,11 +331,11 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			else
 				cache[newIndex][k]->dirty = 1;
 
-			// printf("Set %d after\n", newIndex);
-			// for (int k = 0; k < NUM_WAYS; k++) {
-			// 	printf("	Way %d\n", k);
-			// 	printf("	Index: %x, Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->index, cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-			// }
+			printf("Set %d after\n", newIndex);
+			for (int k = 0; k < NUM_WAYS; k++) {
+				printf("	Way %d\n", k);
+				printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+			}
 			return 0;
 		}
 	}
@@ -286,7 +347,6 @@ int trueLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	// evict entry with highest LRU value
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == NUM_WAYS - 1) {
-
 			cache[newIndex][k]->tag = newTag;
 			cache[newIndex][k]->LRU = 0;
 			for (int i = 0; i < NUM_WAYS; i++) {
