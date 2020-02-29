@@ -17,9 +17,7 @@ int main(int argc, char *argv[])
 	if (fp == NULL)
 		exit(EXIT_FAILURE);
 
-	// Parse file and do all operations
-//	cacheEntryPtr_t* cache = createCache();
-
+// initialize cache
 cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS];
 for (int i = 0; i < NUM_SETS; i++) {
 	for (int k = 0; k < NUM_WAYS; k++) {
@@ -30,6 +28,7 @@ for (int i = 0; i < NUM_SETS; i++) {
 	}
 }
 
+	// Parse file and do all operations
 	setup(fp, cache);
 	fclose(fp);
 	complete();
