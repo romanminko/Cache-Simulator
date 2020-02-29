@@ -59,13 +59,13 @@ int breakup(char *line, cacheEntryPtr_t cache[][NUM_WAYS]) {
 	tagMask = tagMask - 1;
 	newTag = ((address >> indexBits + byteSelectBits) & tagMask);
 
-	// printf("New Index: %d, New tag: %x\n", newIndex, newTag);
-	//
-	// 	printf("Set %d before\n", newIndex);
-	// 	for (int k = 0; k < NUM_WAYS; k++) {
-	// 		printf("	Way %d\n", k);
-	// 		printf("	Index: %x, Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->index, cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-	// 	}
+	printf("New Index: %d, New tag: %x\n", newIndex, newTag);
+
+		printf("Set %d before\n", newIndex);
+		for (int k = 0; k < NUM_WAYS; k++) {
+			printf("	Way %d\n", k);
+			printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+		}
 
 	if (instruct == 0) {
 		cacheRead(cache);
@@ -91,20 +91,25 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 				if (REP_POLICY == 1)
 					cache[newIndex][k]->LRU = 1;
-				// ELSE TRUE LRU
+				if (REP_POLICY == 0) {
+					for (int i = 0; i < NUM_WAYS; i++) {
+						if (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU)
+							cache[newIndex][i]->LRU++;
+					}
+					cache[newIndex][k]->LRU = 0;
+				}
 
-				// printf("READ HIT\n");
-				// printf("Set %d after\n", newIndex);
-				// for (int k = 0; k < NUM_WAYS; k++) {
-				// 	printf("	Way %d\n", k);
-				// 	printf("	Index: %x, Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->index, cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-				// }
+				printf("READ HIT\n");
+				printf("Set %d after\n", newIndex);
+				for (int k = 0; k < NUM_WAYS; k++) {
+					printf("	Way %d\n", k);
+					printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+				}
 				return 0;
 		}
 	}
 	// if miss
 	missCount++;
-
 	// check for invalid line to store new entry in
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->valid == 0) {
@@ -112,24 +117,31 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			cache[newIndex][k]->valid = 1;
 			if (REP_POLICY == 1)
 				cache[newIndex][k]->LRU = 1;
-			// ELSE TRUE LRU
+			if (REP_POLICY == 0) {
+				cache[newIndex][k]->LRU = 0;
+				for (int i = 0; i < NUM_WAYS; i++) {
+					if (i != k && cache[newIndex][i]->valid == 1)
+						cache[newIndex][i]->LRU++;
+				}
+			}
 
-			// printf("READ MISS (Line available)\n");
-			// printf("Set %d after\n", newIndex);
-			// for (int k = 0; k < NUM_WAYS; k++) {
-			// 	printf("	Way %d\n", k);
-			// 	printf("	Index: %x, Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->index, cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-			// }
+			printf("READ MISS (Line available)\n");
+			printf("Set %d after\n", newIndex);
+			for (int k = 0; k < NUM_WAYS; k++) {
+				printf("	Way %d\n", k);
+				printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+			}
 			return 0;
 		}
 	}
 	// if no open lines, use replacement policy
 	if (REP_POLICY == 1) {
-			// printf("READ MISS (LRU)\n");
+			printf("READ MISS (LRU)\n");
 			oneBitLRU(cache);
 	}
-	else {
-		// call TRUE LRU function
+	if (REP_POLICY == 0) {
+		printf("READ MISS (LRU)\n");
+		trueLRU(cache);
 	}
 	return 0;
 }
@@ -142,16 +154,24 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 		if (cache[newIndex][k]->valid == 1 && cache[newIndex][k]->tag == newTag) {
 				hitCount++;
 				cache[newIndex][k]->dirty = 1;
+
+				// adjust LRU bit(s)
 				if (REP_POLICY == 1)
 					cache[newIndex][k]->LRU = 1;
-				// ELSE TRUE LRU
+				if (REP_POLICY == 0) {
+					for (int i = 0; i < NUM_WAYS; i++) {
+						if (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU)
+							cache[newIndex][i]->LRU++;
+					}
+					cache[newIndex][k]->LRU = 0;
+				}
 
-				// printf("WRITE HIT\n");
-				// printf("Set %d after\n", newIndex);
-				// for (int k = 0; k < NUM_WAYS; k++) {
-				// 	printf("	Way %d\n", k);
-				// 	printf("	Index: %x, Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->index, cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-				// }
+				printf("WRITE HIT\n");
+				printf("Set %d after\n", newIndex);
+				for (int k = 0; k < NUM_WAYS; k++) {
+					printf("	Way %d\n", k);
+					printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+				}
 				return 0;
 		}
 	}
@@ -164,26 +184,34 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			cache[newIndex][k]->valid = 1;
 			cache[newIndex][k]->dirty = 1;
 
+			// adjust LRU bit(s)
 			if (REP_POLICY == 1)
 				cache[newIndex][k]->LRU = 1;
-			// ELSE TRUE LRU
+			if (REP_POLICY == 0) {
+				cache[newIndex][k]->LRU = 0;
+				for (int i = 0; i < NUM_WAYS; i++) {
+					if (i != k && cache[newIndex][i]->valid == 1)
+						cache[newIndex][i]->LRU++;
+				}
+			}
 
-			// printf("WRITE MISS (Line available)\n");
-			// printf("Set %d after\n", newIndex);
-			// for (int k = 0; k < NUM_WAYS; k++) {
-			// 	printf("	Way %d\n", k);
-			// 	printf("	Index: %x, Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->index, cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-			// }
+			printf("WRITE MISS (Line available)\n");
+			printf("Set %d after\n", newIndex);
+			for (int k = 0; k < NUM_WAYS; k++) {
+				printf("	Way %d\n", k);
+				printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+			}
 			return 0;
 		}
 	}
 	// if no open lines, use replacement policy
 	if (REP_POLICY == 1) {
-		  // printf("WRITE MISS (LRU)\n");
+		  printf("WRITE MISS (LRU)\n");
 			oneBitLRU(cache);
 	}
-	else {
-		// call TRUE LRU function
+	if (REP_POLICY == 0) {
+		printf("WRITE MISS (LRU)\n");
+		trueLRU(cache);
 	}
 	return 0;
 }
@@ -196,17 +224,14 @@ int cacheInvalidate(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				cache[newIndex][k]->valid = 0;
 				cache[newIndex][k]->tag = 0;
 				cache[newIndex][k]->dirty = 0;
+				cache[newIndex][k]->LRU = 0;
 
-				if (REP_POLICY == 1)
-					cache[newIndex][k]->LRU = 0;
-				// ELSE TRUE LRU
-
-				// printf("WRITE HIT\n");
-				// printf("Set %d after\n", newIndex);
-				// for (int k = 0; k < NUM_WAYS; k++) {
-				// 	printf("	Way %d\n", k);
-				// 	printf("	Index: %x, Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->index, cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-				// }
+				printf("WRITE HIT\n");
+				printf("Set %d after\n", newIndex);
+				for (int k = 0; k < NUM_WAYS; k++) {
+					printf("	Way %d\n", k);
+					printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+				}
 		}
 		else
 			printf("INVALIDATE MISS\n");
@@ -253,6 +278,41 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			return 0;
 		}
 	}
+	printf("1-bit LRU Error\n");
+}
+
+int trueLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
+
+	// evict entry with highest LRU value
+	for (int k = 0; k < NUM_WAYS; k++) {
+		if (cache[newIndex][k]->LRU == NUM_WAYS - 1) {
+
+			cache[newIndex][k]->tag = newTag;
+			cache[newIndex][k]->LRU = 0;
+			for (int i = 0; i < NUM_WAYS; i++) {
+				if (i != k)
+					cache[newIndex][i]->LRU++;
+			}
+
+			evictionCount++;
+
+			if (cache[newIndex][k]->dirty == 1)
+				writebackCount++;
+
+			if (writeFlag == 0)
+				cache[newIndex][k]->dirty = 0;
+			else
+				cache[newIndex][k]->dirty = 1;
+
+			printf("Set %d after\n", newIndex);
+			for (int k = 0; k < NUM_WAYS; k++) {
+				printf("	Way %d\n", k);
+				printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+			}
+			return 0;
+		}
+	}
+	printf("True LRU Error\n");
 }
 
 

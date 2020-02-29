@@ -14,7 +14,7 @@
 #define NUM_SETS 256
 #define NUM_WAYS 1
 #define LINE_SIZE 64
-#define REP_POLICY 1
+#define REP_POLICY 0
 
 typedef struct cacheEntry {
 	int tag;
@@ -29,4 +29,5 @@ int cacheRead(cacheEntryPtr_t cache[][NUM_WAYS]);
 int cacheWrite(cacheEntryPtr_t cache[][NUM_WAYS]);
 int cacheInvalidate(cacheEntryPtr_t cache[][NUM_WAYS]);
 int oneBitLRU(cacheEntryPtr_t cache[][NUM_WAYS]);
+int trueLRU(cacheEntryPtr_t cache[][NUM_WAYS]);
 int complete();
