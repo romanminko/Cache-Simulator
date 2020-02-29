@@ -15,11 +15,22 @@ int main(int argc, char *argv[])
 	// Open trace file
 	fp = fopen(argv[1], "r");
 	if (fp == NULL)
-	exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 
 	// Parse file and do all operations
 //	cacheEntryPtr_t* cache = createCache();
-	parser(fp);
+
+cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS];
+for (int i = 0; i < NUM_SETS; i++) {
+	for (int k = 0; k < NUM_WAYS; k++) {
+		cache[i][k] = (cacheEntryPtr_t) malloc(sizeof(cacheEntry_t));
+		if (!cache[i][k]) {
+			printf("malloc failed\n");
+		}
+	}
+}
+
+	setup(fp, cache);
 	fclose(fp);
 	complete();
 
