@@ -13,6 +13,7 @@ int tagBits;
 int newTag;
 int newIndex;
 int writeFlag = 0;
+int evictFlag = 0;
 
 int setup(FILE *fp, cacheEntryPtr_t cache[][NUM_WAYS]) {
 	byteSelectBits = log2(LINE_SIZE);
@@ -77,8 +78,6 @@ int breakup(char *line, cacheEntryPtr_t cache[][NUM_WAYS]) {
 		cacheInvalidate(cache);
 
 	return 1;
-
-
 }
 
 int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
@@ -91,21 +90,10 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 				// adjust LRU bit(s)
 				if (REP_POLICY == 1) {
-					cache[newIndex][k]->LRU = 1;
-					// check if all LRU bits in the set are high
-					int LRUcheck = 0;
-					for (int k = 0; k < NUM_WAYS; k++) {
-						if (cache[newIndex][k]->LRU == 1) {
-							LRUcheck++;
-						}
-					}
-					// if all LRU bits are high, reset all LRU bits in the set
-					if (LRUcheck == NUM_WAYS) {
-						for (int k = 0; k < NUM_WAYS; k++) {
-							cache[newIndex][k]->LRU = 0;
-						}
-					}
+					evictFlag = 0;
+					oneBitLRU(cache);
 				}
+
 				if (REP_POLICY == 0) {
 					for (int i = 0; i < NUM_WAYS; i++) {
 						if (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU)
@@ -133,20 +121,8 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 			// adjust LRU bit(s)
 			if (REP_POLICY == 1) {
-				cache[newIndex][k]->LRU = 1;
-				// check if all LRU bits in the set are high
-				int LRUcheck = 0;
-				for (int k = 0; k < NUM_WAYS; k++) {
-					if (cache[newIndex][k]->LRU == 1) {
-						LRUcheck++;
-					}
-				}
-				// if all LRU bits are high, reset all LRU bits in the set
-				if (LRUcheck == NUM_WAYS) {
-					for (int k = 0; k < NUM_WAYS; k++) {
-						cache[newIndex][k]->LRU = 0;
-					}
-				}
+				evictFlag = 0;
+				oneBitLRU(cache);
 			}
 			if (REP_POLICY == 0) {
 				cache[newIndex][k]->LRU = 0;
@@ -168,6 +144,7 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	// if no open lines, use replacement policy
 	if (REP_POLICY == 1) {
 			printf("READ MISS (LRU)\n");
+			evictFlag = 1;
 			oneBitLRU(cache);
 	}
 	if (REP_POLICY == 0) {
@@ -188,20 +165,8 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 				// adjust LRU bit(s)
 				if (REP_POLICY == 1) {
-					cache[newIndex][k]->LRU = 1;
-					// check if all LRU bits in the set are high
-					int LRUcheck = 0;
-					for (int k = 0; k < NUM_WAYS; k++) {
-						if (cache[newIndex][k]->LRU == 1) {
-							LRUcheck++;
-						}
-					}
-					// if all LRU bits are high, reset all LRU bits in the set
-					if (LRUcheck == NUM_WAYS) {
-						for (int k = 0; k < NUM_WAYS; k++) {
-							cache[newIndex][k]->LRU = 0;
-						}
-					}
+					evictFlag = 0;
+					oneBitLRU(cache);
 				}
 				if (REP_POLICY == 0) {
 					for (int i = 0; i < NUM_WAYS; i++) {
@@ -231,20 +196,8 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 			// adjust LRU bit(s)
 			if (REP_POLICY == 1) {
-				cache[newIndex][k]->LRU = 1;
-				// check if all LRU bits in the set are high
-				int LRUcheck = 0;
-				for (int k = 0; k < NUM_WAYS; k++) {
-					if (cache[newIndex][k]->LRU == 1) {
-						LRUcheck++;
-					}
-				}
-				// if all LRU bits are high, reset all LRU bits in the set
-				if (LRUcheck == NUM_WAYS) {
-					for (int k = 0; k < NUM_WAYS; k++) {
-						cache[newIndex][k]->LRU = 0;
-					}
-				}
+				evictFlag = 0;
+				oneBitLRU(cache);
 			}
 			if (REP_POLICY == 0) {
 				cache[newIndex][k]->LRU = 0;
@@ -266,6 +219,7 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	// if no open lines, use replacement policy
 	if (REP_POLICY == 1) {
 		  printf("WRITE MISS (LRU)\n");
+			evictFlag = 1;
 			oneBitLRU(cache);
 	}
 	if (REP_POLICY == 0) {
@@ -304,7 +258,6 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == 0) {
 
-			cache[newIndex][k]->tag = newTag;
 			cache[newIndex][k]->LRU = 1;
 
 			// check if all LRU bits in the set are high
@@ -321,15 +274,19 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				}
 			}
 
-			evictionCount++;
+			if (evictFlag) {
+				cache[newIndex][k]->tag = newTag;
+				
+				evictionCount++;
 
-			if (cache[newIndex][k]->dirty == 1)
-				writebackCount++;
+				if (cache[newIndex][k]->dirty == 1)
+					writebackCount++;
 
-			if (writeFlag == 0)
-				cache[newIndex][k]->dirty = 0;
-			else
-				cache[newIndex][k]->dirty = 1;
+				if (writeFlag == 0)
+					cache[newIndex][k]->dirty = 0;
+				else
+					cache[newIndex][k]->dirty = 1;
+			}
 
 			printf("Set %d after\n", newIndex);
 			for (int k = 0; k < NUM_WAYS; k++) {
