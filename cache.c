@@ -254,34 +254,37 @@ int cacheInvalidate(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
-	// evict first entry whose LRU is 0
+	// check if all LRU bits in the set are high
+	int LRUcheck = 0;
+	for (int k = 0; k < NUM_WAYS; k++) {
+		if (cache[newIndex][k]->LRU == 1) {
+			LRUcheck++;
+		}
+	}
+	// if all LRU bits are high, reset all LRU bits in the set
+	if (LRUcheck == NUM_WAYS) {
+		for (int k = 0; k < NUM_WAYS; k++) {
+			cache[newIndex][k]->LRU = 0;
+		}
+	}
+
+	// find  first entry whose LRU is 0 and update LRU bit to 1
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == 0) {
 
 			cache[newIndex][k]->LRU = 1;
 
-			// check if all LRU bits in the set are high
-			int LRUcheck = 0;
-			for (int k = 0; k < NUM_WAYS; k++) {
-				if (cache[newIndex][k]->LRU == 1) {
-					LRUcheck++;
-				}
-			}
-			// if all LRU bits are high, reset all LRU bits in the set
-			if (LRUcheck == NUM_WAYS) {
-				for (int k = 0; k < NUM_WAYS; k++) {
-					cache[newIndex][k]->LRU = 0;
-				}
-			}
-
+			// if eviction needed, replace tag
 			if (evictFlag) {
 				cache[newIndex][k]->tag = newTag;
-				
+
 				evictionCount++;
 
+				// check dirty bit and writeback if it is high
 				if (cache[newIndex][k]->dirty == 1)
 					writebackCount++;
 
+				// update dirty bit appropriately
 				if (writeFlag == 0)
 					cache[newIndex][k]->dirty = 0;
 				else
