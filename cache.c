@@ -310,11 +310,6 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 					cache[newIndex][k]->dirty = 1;
 			}
 
-			// printf("Set %d after\n", newIndex);
-			// for (int k = 0; k < NUM_WAYS; k++) {
-			// 	printf("	Way %d\n", k);
-			// 	printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-			// }
 			return 0;
 		}
 	}
@@ -343,11 +338,6 @@ int trueLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			else
 				cache[newIndex][k]->dirty = 1;
 
-			// printf("Set %d after\n", newIndex);
-			// for (int k = 0; k < NUM_WAYS; k++) {
-			// 	printf("	Way %d\n", k);
-			// 	printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-			// }
 			return 0;
 		}
 	}
