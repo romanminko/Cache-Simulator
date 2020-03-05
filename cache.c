@@ -14,6 +14,7 @@ int newTag;
 int newIndex;
 int writeFlag = 0;
 int evictFlag = 0;
+int hitFlag = 0;
 
 int setup(FILE *fp, cacheEntryPtr_t cache[][NUM_WAYS]) {
 	byteSelectBits = log2(LINE_SIZE);
@@ -23,10 +24,6 @@ int setup(FILE *fp, cacheEntryPtr_t cache[][NUM_WAYS]) {
 	// printf("number of index bits: %d\n", indexBits);
 	// printf("number of tag bits: %d\n", tagBits);
 
-	for (int i = 0; i < NUM_SETS; i++) {
-		for (int k = 0; k < NUM_WAYS; k++) {
-		}
-	}
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
@@ -87,7 +84,7 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->valid == 1 && cache[newIndex][k]->tag == newTag) {
 				hitCount++;
-
+				hitFlag = 1;
 				// adjust LRU bit(s)
 				if (REP_POLICY == 1) {
 					evictFlag = 0;
@@ -96,7 +93,7 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 				if (REP_POLICY == 0) {
 					for (int i = 0; i < NUM_WAYS; i++) {
-						if (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU)
+						if ((cache[newIndex][i]->valid == 1) && (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU))
 							cache[newIndex][i]->LRU++;
 					}
 					cache[newIndex][k]->LRU = 0;
@@ -113,6 +110,7 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	}
 	// if miss
 	missCount++;
+	hitFlag = 0;
 	// check for invalid line to store new entry in
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->valid == 0) {
@@ -125,11 +123,11 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				oneBitLRU(cache);
 			}
 			if (REP_POLICY == 0) {
-				cache[newIndex][k]->LRU = 0;
 				for (int i = 0; i < NUM_WAYS; i++) {
-					if (i != k && cache[newIndex][i]->valid == 1)
+					if (cache[newIndex][i]->valid == 1)
 						cache[newIndex][i]->LRU++;
 				}
+				cache[newIndex][k]->LRU = 0;
 			}
 
 			printf("READ MISS (Line available)\n");
@@ -161,6 +159,7 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->valid == 1 && cache[newIndex][k]->tag == newTag) {
 				hitCount++;
+				hitFlag = 1;
 				cache[newIndex][k]->dirty = 1;
 
 				// adjust LRU bit(s)
@@ -170,7 +169,7 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				}
 				if (REP_POLICY == 0) {
 					for (int i = 0; i < NUM_WAYS; i++) {
-						if (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU)
+						if ((cache[newIndex][i]->valid == 1) && (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU))
 							cache[newIndex][i]->LRU++;
 					}
 					cache[newIndex][k]->LRU = 0;
@@ -187,6 +186,7 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	}
 	// if miss
 	missCount++;
+	hitFlag = 0;
 	// check for invalid line to store new entry
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->valid == 0) {
@@ -200,11 +200,11 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				oneBitLRU(cache);
 			}
 			if (REP_POLICY == 0) {
-				cache[newIndex][k]->LRU = 0;
 				for (int i = 0; i < NUM_WAYS; i++) {
-					if (i != k && cache[newIndex][i]->valid == 1)
+					if (cache[newIndex][i]->valid == 1)
 						cache[newIndex][i]->LRU++;
 				}
+				cache[newIndex][k]->LRU = 0;
 			}
 
 			printf("WRITE MISS (Line available)\n");
@@ -239,6 +239,14 @@ int cacheInvalidate(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				cache[newIndex][k]->dirty = 0;
 				cache[newIndex][k]->LRU = 0;
 
+				// adjust True LRU
+				if (REP_POLICY == 0) {
+					for (int i = 0; i < NUM_WAYS; i++) {
+						if ((cache[newIndex][i]->valid == 1) && (cache[newIndex][i]->LRU > cache[newIndex][k]->LRU))
+							cache[newIndex][i]->LRU--;
+					}
+				}
+
 				printf("WRITE HIT\n");
 				printf("Set %d after\n", newIndex);
 				for (int k = 0; k < NUM_WAYS; k++) {
@@ -272,7 +280,8 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == 0) {
 
-			cache[newIndex][k]->LRU = 1;
+			if (hitFlag == 0)
+				cache[newIndex][k]->LRU = 1;
 
 			// if eviction needed, replace tag
 			if (evictFlag) {
