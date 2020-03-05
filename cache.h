@@ -11,10 +11,10 @@
 #include <math.h>
 
 //parameters given
-#define NUM_SETS 256
-#define NUM_WAYS 1
+#define NUM_SETS 1
+#define NUM_WAYS 4
 #define LINE_SIZE 64
-#define REP_POLICY 0
+#define REP_POLICY 1
 
 typedef struct cacheEntry {
 	int tag;
