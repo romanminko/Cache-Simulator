@@ -20,9 +20,9 @@ int setup(FILE *fp, cacheEntryPtr_t cache[][NUM_WAYS]) {
 	byteSelectBits = log2(LINE_SIZE);
 	indexBits = log2(NUM_SETS);
 	tagBits = 32 - indexBits - byteSelectBits;
-	// printf("number of byte select bits: %d\n", byteSelectBits);
-	// printf("number of index bits: %d\n", indexBits);
-	// printf("number of tag bits: %d\n", tagBits);
+ 	printf("number of byte select bits: %d\n", byteSelectBits);
+	printf("number of index bits: %d\n", indexBits);
+	printf("number of tag bits: %d\n", tagBits);
 
 	char *line = NULL;
 	size_t len = 0;
@@ -108,7 +108,8 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				return 0;
 		}
 	}
-	// if miss
+
+	// if cache miss
 	missCount++;
 	hitFlag = 0;
 	// check for invalid line to store new entry in
@@ -139,7 +140,7 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			return 0;
 		}
 	}
-	// if no open lines, use replacement policy
+	// if miss and no open lines, use replacement policy
 	if (REP_POLICY == 1) {
 			printf("READ MISS (LRU)\n");
 			evictFlag = 1;
@@ -156,6 +157,7 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	}
 	return 0;
 }
+
 
 int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	writeCount++;
@@ -189,7 +191,8 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				return 0;
 		}
 	}
-	// if miss
+
+	// if cache miss
 	missCount++;
 	hitFlag = 0;
 	// check for invalid line to store new entry
@@ -199,7 +202,7 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			cache[newIndex][k]->valid = 1;
 			cache[newIndex][k]->dirty = 1;
 
-			// adjust LRU bit(s)
+			// replacement policy
 			if (REP_POLICY == 1) {
 				evictFlag = 0;
 				oneBitLRU(cache);
@@ -221,7 +224,7 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 			return 0;
 		}
 	}
-	// if no open lines, use replacement policy
+	// if miss and no open lines, use replacement policy
 	if (REP_POLICY == 1) {
 		  printf("WRITE MISS (LRU)\n");
 			evictFlag = 1;
@@ -257,7 +260,7 @@ int cacheInvalidate(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 					}
 				}
 
-				printf("WRITE HIT\n");
+				printf("Invalidate HIT\n");
 				printf("Set %d after\n", newIndex);
 				for (int k = 0; k < NUM_WAYS; k++) {
 					printf("	Way %d\n", k);
@@ -286,7 +289,7 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 		}
 	}
 
-	// find  first entry whose LRU is 0 and update LRU bit to 1
+	// find first entry whose LRU is 0 and update LRU bit to 1
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == 0) {
 
@@ -318,7 +321,7 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 int trueLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
-	// evict entry with highest LRU value
+	// evict entry with highest possible LRU value
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == NUM_WAYS - 1) {
 			cache[newIndex][k]->tag = newTag;

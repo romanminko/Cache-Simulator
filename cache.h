@@ -12,9 +12,9 @@
 
 //parameters given
 #define NUM_SETS 1
-#define NUM_WAYS 4
+#define NUM_WAYS 64
 #define LINE_SIZE 64
-#define REP_POLICY 1
+#define REP_POLICY 0
 
 typedef struct cacheEntry {
 	int tag;
