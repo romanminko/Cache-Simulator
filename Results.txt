@@ -1,4 +1,84 @@
 CACHE PARAMETERS:
+Number of NUM_sets: 8192
+Associativity: 1
+Cache line size: 64
+Replacement policy: 1-bit LRU
+
+CACHE STATISTICS:
+Total number of cache accesses: 40000
+Number of cache reads: 26671
+Number of cache writes: 13329
+Number of invalidates: 0
+Number of cache hits: 23651
+Number of cache misses: 16349
+Cache hit ratio: 59.13%
+Cache miss ratio: 40.87%
+Number of evictions: 12000
+Number of writebacks: 5321
+
+
+
+CACHE PARAMETERS:
+Number of NUM_sets: 4096
+Associativity: 1
+Cache line size: 128
+Replacement policy: 1-bit LRU
+
+CACHE STATISTICS:
+Total number of cache accesses: 40000
+Number of cache reads: 26671
+Number of cache writes: 13329
+Number of invalidates: 0
+Number of cache hits: 25457
+Number of cache misses: 14543
+Cache hit ratio: 63.64%
+Cache miss ratio: 36.36%
+Number of evictions: 12367
+Number of writebacks: 5583
+
+
+
+CACHE PARAMETERS:
+Number of NUM_sets: 2048
+Associativity: 4
+Cache line size: 64
+Replacement policy: 1-bit LRU
+
+CACHE STATISTICS:
+Total number of cache accesses: 40000
+Number of cache reads: 26671
+Number of cache writes: 13329
+Number of invalidates: 0
+Number of cache hits: 30134
+Number of cache misses: 9866
+Cache hit ratio: 75.33%
+Cache miss ratio: 24.67%
+Number of evictions: 4301
+Number of writebacks: 2478
+
+
+
+CACHE PARAMETERS:
+Number of NUM_sets: 2048
+Associativity: 4
+Cache line size: 64
+Replacement policy: True LRU
+
+CACHE STATISTICS:
+Total number of cache accesses: 40000
+Number of cache reads: 26671
+Number of cache writes: 13329
+Number of invalidates: 0
+Number of cache hits: 30086
+Number of cache misses: 9914
+Cache hit ratio: 75.21%
+Cache miss ratio: 24.79%
+Number of evictions: 4349
+Number of writebacks: 2470
+
+
+
+CACHE PARAMETERS:
 Number of NUM_sets: 4096
 Associativity: 1
 Cache line size: 64
@@ -29,9 +109,9 @@ Total number of cache accesses: 80000
 Number of cache reads: 48174
 Number of cache writes: 15764
 Number of invalidates: 16062
-Number of cache hits: 44557
-Number of cache misses: 19381
-Cache hit ratio: 69.69%
-Cache miss ratio: 30.31%
-Number of evictions: 4922
-Number of writebacks: 8046
+Number of cache hits: 44576
+Number of cache misses: 19362
+Cache hit ratio: 69.72%
+Cache miss ratio: 30.28%
+Number of evictions: 4891
+Number of writebacks: 8081
