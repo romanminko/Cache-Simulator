@@ -70,101 +70,107 @@ int cacheRWI(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS], int instruct) {
 
   // check for cache hit
 	for (int k = 0; k < NUM_WAYS; k++) {
+
+    // hit found
 		if (cache[newIndex][k]->valid == 1 && cache[newIndex][k]->tag == newTag) {
 
-        // invalidate hit
-        if (instruct == 2) {
+      // invalidate hit
+      if (instruct == 2) {
 
-          // writeback if dirty
-          if (cache[newIndex][k]->dirty == 1) {
-            writebackCount++;
-          }
+        // writeback if dirty
+        if (cache[newIndex][k]->dirty == 1) {
+          writebackCount++;
+        }
 
-          cache[newIndex][k]->valid = 0;
-          cache[newIndex][k]->tag = 0;
-          cache[newIndex][k]->dirty = 0;
+        cache[newIndex][k]->valid = 0;
+        cache[newIndex][k]->tag = 0;
+        cache[newIndex][k]->dirty = 0;
 
-          // adjust True LRU
-          if (REP_POLICY == 0) {
-            for (int i = 0; i < NUM_WAYS; i++) {
-              if ((cache[newIndex][i]->valid == 1) && (cache[newIndex][i]->LRU > cache[newIndex][k]->LRU))
-                cache[newIndex][i]->LRU--;
-            }
-          }
-
-          cache[newIndex][k]->LRU = 0;
-
-          return 0;
-        } // end invalidate
-
-        hitCount++;
-
-        // if write, set dirty bit
-        if (instruct == 1)
-				    cache[newIndex][k]->dirty = 1;
-
-				// 1-bit LRU
-				if (REP_POLICY == 1) {
-					cache[newIndex][k]->LRU = 1;
-				}
-
+        // update true LRU
         if (REP_POLICY == 0) {
-					for (int i = 0; i < NUM_WAYS; i++) {
-						if ((cache[newIndex][i]->valid == 1) && (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU))
-							cache[newIndex][i]->LRU++;
-					}
-					cache[newIndex][k]->LRU = 0;
-				}
+          for (int i = 0; i < NUM_WAYS; i++) {
+            if ((cache[newIndex][i]->valid == 1) && (cache[newIndex][i]->LRU > cache[newIndex][k]->LRU))
+              cache[newIndex][i]->LRU--;
+          }
+        }
 
-				return 0;
-      }
+        cache[newIndex][k]->LRU = 0;
+
+        return 0;
+      } // end invalidate hit
+
+      hitCount++;
+
+      // if write, set dirty bit
+      if (instruct == 1)
+			    cache[newIndex][k]->dirty = 1;
+
+			// update 1-bit LRU
+			if (REP_POLICY == 1)
+				cache[newIndex][k]->LRU = 1;
+
+      // update true LRU
+      if (REP_POLICY == 0) {
+				for (int i = 0; i < NUM_WAYS; i++) {
+					if ((cache[newIndex][i]->valid == 1) && (cache[newIndex][i]->LRU < cache[newIndex][k]->LRU))
+						cache[newIndex][i]->LRU++;
+				}
+				cache[newIndex][k]->LRU = 0;
+			}
+
+			return 0;
+    }
+	}
+
+  // invalidate miss
+  if (instruct == 2)
+    return 0;
+
+  // cache miss
+  missCount++;
+
+	// check for invalid line to store new entry
+	for (int k = 0; k < NUM_WAYS; k++) {
+
+    // if invalid line found
+		if (cache[newIndex][k]->valid == 0) {
+			cache[newIndex][k]->tag = newTag;
+			cache[newIndex][k]->valid = 1;
+
+      // if write, set dirty bit
+      if (instruct == 1)
+			   cache[newIndex][k]->dirty = 1;
+
+			// update 1-bit LRU
+			if (REP_POLICY == 1) {
+        cache[newIndex][k]->LRU = 1;
+			}
+
+      // update true LRU
+      if (REP_POLICY == 0) {
+				for (int i = 0; i < NUM_WAYS; i++) {
+					if (cache[newIndex][i]->valid == 1)
+						cache[newIndex][i]->LRU++;
+				}
+				cache[newIndex][k]->LRU = 0;
+			}
+
+			return 0;
 		}
+	} // end invalid check
 
-    if (instruct == 2)
-      return 0;
+  // if miss and no open lines, evict appropriate line
+  if (REP_POLICY == 1)
+    oneBitEvict(cache, instruct);
 
-    // cache miss
-    missCount++;
+  if (REP_POLICY == 0)
+    trueLRUEvict(cache, instruct);
 
-  	// check for invalid line to store new entry
-  	for (int k = 0; k < NUM_WAYS; k++) {
-  		if (cache[newIndex][k]->valid == 0) {
-  			cache[newIndex][k]->tag = newTag;
-  			cache[newIndex][k]->valid = 1;
-
-        // if write, set dirty bit
-        if (instruct == 1)
-  			   cache[newIndex][k]->dirty = 1;
-
-  			// 1-bit LRU
-  			if (REP_POLICY == 1) {
-          cache[newIndex][k]->LRU = 1;
-  			}
-
-        if (REP_POLICY == 0) {
-  				for (int i = 0; i < NUM_WAYS; i++) {
-  					if (cache[newIndex][i]->valid == 1)
-  						cache[newIndex][i]->LRU++;
-  				}
-  				cache[newIndex][k]->LRU = 0;
-  			}
-
-  			return 0;
-  		}
-  	}
-
-    // if miss and no open lines, use replacement policy
-    if (REP_POLICY == 1) {
-      oneBitEvict(cache, instruct);
-    }
-
-    if (REP_POLICY == 0) {
-      trueLRUEvict(cache, instruct);
-    }
-}
+} // end cacheRWI
 
 int oneBitEvict(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS], int instruct) {
-		// check if all LRU bits in the set are high
+
+    // check if all LRU bits in the set are high
 		int LRUcheck = 0;
 		for (int k = 0; k < NUM_WAYS; k++) {
 			if (cache[newIndex][k]->LRU == 1) {
@@ -193,6 +199,7 @@ int oneBitEvict(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS], int instruct) {
 					writebackCount++;
 				}
 
+        // update dirty bit appropriately
         if (instruct == 0)
           cache[newIndex][k]->dirty = 0;
         if (instruct == 1)
@@ -202,7 +209,7 @@ int oneBitEvict(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS], int instruct) {
 		}
 	}
 	printf("1-bit LRU Error\n");
-}
+} // end oneBitEvict
 
 int trueLRUEvict(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS], int instruct) {
 
@@ -218,10 +225,12 @@ int trueLRUEvict(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS], int instruct) {
 
 			evictionCount++;
 
+      // writeback if dirty
 			if (cache[newIndex][k]->dirty == 1) {
 				writebackCount++;
 			}
 
+      // update dirty bit appropriately
 			if (instruct == 0)
 				cache[newIndex][k]->dirty = 0;
 			if (instruct == 1)
@@ -231,7 +240,7 @@ int trueLRUEvict(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS], int instruct) {
 		}
 	}
 	printf("True LRU Error\n");
-}
+} // end trueLRUEvict
 
 
 int complete() {
