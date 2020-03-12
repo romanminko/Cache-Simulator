@@ -16,6 +16,7 @@ int writeFlag = 0;
 int evictFlag = 0;
 int hitFlag = 0;
 
+
 int setup(FILE *fp, cacheEntryPtr_t cache[][NUM_WAYS]) {
 	byteSelectBits = log2(LINE_SIZE);
 	indexBits = log2(NUM_SETS);
@@ -57,7 +58,7 @@ int breakup(char *line, cacheEntryPtr_t cache[][NUM_WAYS]) {
 	tagMask = tagMask - 1;
 	newTag = ((address >> indexBits + byteSelectBits) & tagMask);
 
-	printf("New Index: %d, New tag: %x\n", newIndex, newTag);
+	printf("New Index: %d, New tag: %x, %d\n", newIndex, newTag, instruct);
 
 		printf("Set %d before\n", newIndex);
 		for (int k = 0; k < NUM_WAYS; k++) {
@@ -86,9 +87,11 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				hitCount++;
 				hitFlag = 1;
 				// adjust LRU bit(s)
+
 				if (REP_POLICY == 1) {
+					cache[newIndex][k]->LRU = 1;
 					evictFlag = 0;
-					oneBitLRU(cache);
+				//	oneBitLRU(cache);
 				}
 
 				if (REP_POLICY == 0) {
@@ -102,9 +105,9 @@ int cacheRead(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				printf("READ HIT\n");
 				printf("Set %d after\n", newIndex);
 				for (int k = 0; k < NUM_WAYS; k++) {
-					printf("	Way %d\n", k);
-					printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
-				}
+				 	printf("	Way %d\n", k);
+				 	printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
+				 }
 				return 0;
 		}
 	}
@@ -170,9 +173,11 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 				cache[newIndex][k]->dirty = 1;
 
 				// adjust LRU bit(s)
+
 				if (REP_POLICY == 1) {
+					cache[newIndex][k]->LRU = 1;
 					evictFlag = 0;
-					oneBitLRU(cache);
+					//oneBitLRU(cache);
 				}
 				if (REP_POLICY == 0) {
 					for (int i = 0; i < NUM_WAYS; i++) {
@@ -243,14 +248,17 @@ int cacheWrite(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 }
 
 int cacheInvalidate(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
+	invalidateCount++;
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->valid == 1 && cache[newIndex][k]->tag == newTag) {
-				invalidateCount++;
-				printf("INVALIDATE HIT\n");
+
+				if (cache[newIndex][k]->dirty == 1) {
+					writebackCount++;
+					printf("Invalidate Writeback\n");
+				}
 				cache[newIndex][k]->valid = 0;
 				cache[newIndex][k]->tag = 0;
 				cache[newIndex][k]->dirty = 0;
-				cache[newIndex][k]->LRU = 0;
 
 				// adjust True LRU
 				if (REP_POLICY == 0) {
@@ -258,7 +266,10 @@ int cacheInvalidate(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 						if ((cache[newIndex][i]->valid == 1) && (cache[newIndex][i]->LRU > cache[newIndex][k]->LRU))
 							cache[newIndex][i]->LRU--;
 					}
+					//cache[newIndex][k]->LRU = 0;
 				}
+
+				cache[newIndex][k]->LRU = 0;
 
 				printf("Invalidate HIT\n");
 				printf("Set %d after\n", newIndex);
@@ -266,26 +277,33 @@ int cacheInvalidate(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 					printf("	Way %d\n", k);
 					printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
 				}
-		}
-		else
-			printf("INVALIDATE MISS\n");
+				return 0;
+		 }
+	}
+	printf("INVALIDATE MISS\n");
+	printf("Set %d after\n", newIndex);
+	for (int k = 0; k < NUM_WAYS; k++) {
+		printf("	Way %d\n", k);
+		printf("	Tag: %x, Valid: %d, Dirty: %d, LRU: %d\n", cache[newIndex][k]->tag, cache[newIndex][k]->valid, cache[newIndex][k]->dirty, cache[newIndex][k]->LRU);
 	}
 	return 0;
 }
 
 int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
-	// check if all LRU bits in the set are high
-	int LRUcheck = 0;
-	for (int k = 0; k < NUM_WAYS; k++) {
-		if (cache[newIndex][k]->LRU == 1) {
-			LRUcheck++;
-		}
-	}
-	// if all LRU bits are high, reset all LRU bits in the set
-	if (LRUcheck == NUM_WAYS) {
+	if (hitFlag == 0) {
+		// check if all LRU bits in the set are high
+		int LRUcheck = 0;
 		for (int k = 0; k < NUM_WAYS; k++) {
-			cache[newIndex][k]->LRU = 0;
+			if (cache[newIndex][k]->LRU == 1) {
+				LRUcheck++;
+			}
+		}
+		// if all LRU bits are high, reset all LRU bits in the set
+		if (LRUcheck == NUM_WAYS) {
+			for (int k = 0; k < NUM_WAYS; k++) {
+				cache[newIndex][k]->LRU = 0;
+			}
 		}
 	}
 
@@ -293,7 +311,7 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == 0) {
 
-			if (hitFlag == 0)
+//			if (hitFlag == 0)
 				cache[newIndex][k]->LRU = 1;
 
 			// if eviction needed, replace tag
@@ -304,6 +322,7 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 				// check dirty bit and writeback if it is high
 				if (cache[newIndex][k]->dirty == 1)
+					printf("LRU Writeback\n");
 					writebackCount++;
 
 				// update dirty bit appropriately
@@ -321,6 +340,7 @@ int oneBitLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 int trueLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
+
 	// evict entry with highest possible LRU value
 	for (int k = 0; k < NUM_WAYS; k++) {
 		if (cache[newIndex][k]->LRU == NUM_WAYS - 1) {
@@ -335,6 +355,7 @@ int trueLRU(cacheEntryPtr_t cache[NUM_SETS][NUM_WAYS]) {
 
 			if (cache[newIndex][k]->dirty == 1)
 				writebackCount++;
+				printf("Writeback\n");
 
 			if (writeFlag == 0)
 				cache[newIndex][k]->dirty = 0;

@@ -1,0 +1,37 @@
+CACHE PARAMETERS:
+Number of NUM_sets: 4096
+Associativity: 1
+Cache line size: 64
+Replacement policy: 1-bit LRU
+
+CACHE STATISTICS:
+Total number of cache accesses: 80000
+Number of cache reads: 48174
+Number of cache writes: 15764
+Number of invalidates: 16062
+Number of cache hits: 30536
+Number of cache misses: 33402
+Cache hit ratio: 47.76%
+Cache miss ratio: 52.24%
+Number of evictions: 23541
+Number of writebacks: 11412
+
+
+
+CACHE PARAMETERS:
+Number of NUM_sets: 512
+Associativity: 8
+Cache line size: 64
+Replacement policy: 1-bit LRU
+
+CACHE STATISTICS:
+Total number of cache accesses: 80000
+Number of cache reads: 48174
+Number of cache writes: 15764
+Number of invalidates: 16062
+Number of cache hits: 44557
+Number of cache misses: 19381
+Cache hit ratio: 69.69%
+Cache miss ratio: 30.31%
+Number of evictions: 4922
+Number of writebacks: 8046
