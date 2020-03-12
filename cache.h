@@ -11,8 +11,8 @@
 #include <math.h>
 
 //parameters given
-#define NUM_SETS 4096
-#define NUM_WAYS 1
+#define NUM_SETS 512
+#define NUM_WAYS 8
 #define LINE_SIZE 64
 #define REP_POLICY 1
 
